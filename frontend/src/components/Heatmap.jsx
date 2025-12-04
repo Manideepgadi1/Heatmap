@@ -64,10 +64,31 @@ const formatValue = (value) => {
   return `${percentage >= 0 ? '+' : ''}${percentage}%`;
 };
 
-const Heatmap = ({ indexName, heatmapData, monthlyPrice, monthlyProfits, avgMonthlyProfits3y, rankPercentile4y, inverseRankPercentile, monthlyRankPercentile }) => {
+const Heatmap = ({ indexName, heatmapData, monthlyPrice, monthlyProfits, avgMonthlyProfits3y, rankPercentile4y, inverseRankPercentile, monthlyRankPercentile, forwardPeriod }) => {
   const theme = useTheme();
   const [hoveredCell, setHoveredCell] = useState(null);
   const heatmapRef = useRef(null);
+
+  /**
+   * Get the title based on forward period
+   */
+  const getHeatmapTitle = () => {
+    if (!forwardPeriod) {
+      return 'Month-over-Month Returns (%)';
+    }
+    
+    const periodLabels = {
+      '1M': '1 Month',
+      '3M': '3 Months',
+      '6M': '6 Months',
+      '1Y': '1 Year',
+      '2Y': '2 Years',
+      '3Y': '3 Years',
+      '4Y': '4 Years'
+    };
+    
+    return `${periodLabels[forwardPeriod]} Forward Returns (%)`;
+  };
 
   /**
    * Download heatmap as PNG image
@@ -226,7 +247,7 @@ const Heatmap = ({ indexName, heatmapData, monthlyPrice, monthlyProfits, avgMont
         textAlign="center"
         sx={{ mb: 3, fontWeight: 500 }}
       >
-        Month-over-Month Returns (%)
+        {getHeatmapTitle()}
       </Typography>
 
       <Paper

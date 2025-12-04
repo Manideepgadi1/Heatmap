@@ -197,6 +197,7 @@ const Dashboard = () => {
                     rankPercentile4y={heatmapData.rank_percentile_4y}
                     inverseRankPercentile={heatmapData.inverse_rank_percentile}
                     monthlyRankPercentile={heatmapData.monthly_rank_percentile}
+                    forwardPeriod={forwardPeriod}
                   />
                 </Box>
               )}
