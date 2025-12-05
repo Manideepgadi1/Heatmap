@@ -335,39 +335,40 @@ class HeatmapService:
     
     def calculate_forward_returns(self, index_name: str, forward_period: str) -> Dict[str, Dict[str, Optional[float]]]:
         """
-        Calculate forward returns for each month.
-        Forward return = return from current month to N months/years in the future.
+        Calculate forward CAGR (Compound Annual Growth Rate) for each month.
+        Formula: (current_value / future_value)^(1/years) - 1
+        This represents the annualized return from current month to N months/years in the future.
         
         Args:
             index_name: Name of the index
             forward_period: One of '1M', '3M', '6M', '1Y', '2Y', '3Y', '4Y'
             
         Returns:
-            Dictionary with year -> month -> forward return value
+            Dictionary with year -> month -> forward CAGR value
         """
         if index_name not in self.data.columns:
             raise ValueError(f"Index '{index_name}' not found in data")
         
-        # Map forward period to number of months
+        # Map forward period to number of months and years
         period_map = {
-            '1M': 1,
-            '3M': 3,
-            '6M': 6,
-            '1Y': 12,
-            '2Y': 24,
-            '3Y': 36,
-            '4Y': 48
+            '1M': (1, 1/12),    # 1 month = 0.083 years
+            '3M': (3, 3/12),    # 3 months = 0.25 years
+            '6M': (6, 6/12),    # 6 months = 0.5 years
+            '1Y': (12, 1),      # 1 year
+            '2Y': (24, 2),      # 2 years
+            '3Y': (36, 3),      # 3 years
+            '4Y': (48, 4)       # 4 years
         }
         
         if forward_period not in period_map:
             raise ValueError(f"Invalid forward period: {forward_period}")
         
-        months_forward = period_map[forward_period]
+        months_forward, years_forward = period_map[forward_period]
         
         # Calculate monthly averages
         monthly_avg = self.calculate_monthly_average(index_name)
         
-        # Calculate forward returns
+        # Calculate forward CAGR
         forward_returns: Dict[str, Dict[str, Optional[float]]] = {}
         
         # Convert monthly_avg to list for easier indexing
@@ -388,10 +389,10 @@ class HeatmapService:
             if future_idx < len(monthly_list):
                 future_value = monthly_list[future_idx][1]
                 
-                # Calculate forward return: (future_value / current_value) - 1
-                if not pd.isna(current_value) and not pd.isna(future_value) and current_value != 0:
-                    forward_return = (future_value / current_value) - 1
-                    forward_returns[year_str][month_str] = round(float(forward_return), 4)
+                # Calculate forward CAGR: (current_value / future_value)^(1/years) - 1
+                if not pd.isna(current_value) and not pd.isna(future_value) and future_value > 0 and current_value > 0:
+                    forward_cagr = (current_value / future_value) ** (1 / years_forward) - 1
+                    forward_returns[year_str][month_str] = round(float(forward_cagr), 5)
                 else:
                     forward_returns[year_str][month_str] = None
             else:
