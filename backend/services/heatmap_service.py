@@ -336,7 +336,7 @@ class HeatmapService:
     def calculate_forward_returns(self, index_name: str, forward_period: str) -> Dict[str, Dict[str, Optional[float]]]:
         """
         Calculate forward CAGR (Compound Annual Growth Rate) for each month.
-        Formula: (current_value / future_value)^(1/years) - 1
+        Formula: (future_value / current_value)^(1/years) - 1
         This represents the annualized return from current month to N months/years in the future.
         
         Args:
@@ -389,9 +389,9 @@ class HeatmapService:
             if future_idx < len(monthly_list):
                 future_value = monthly_list[future_idx][1]
                 
-                # Calculate forward CAGR: (current_value / future_value)^(1/years) - 1
+                # Calculate forward CAGR: (future_value / current_value)^(1/years) - 1
                 if not pd.isna(current_value) and not pd.isna(future_value) and future_value > 0 and current_value > 0:
-                    forward_cagr = (current_value / future_value) ** (1 / years_forward) - 1
+                    forward_cagr = (future_value / current_value) ** (1 / years_forward) - 1
                     forward_returns[year_str][month_str] = round(float(forward_cagr), 5)
                 else:
                     forward_returns[year_str][month_str] = None

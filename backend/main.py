@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import sys
+from typing import Optional
 
 # Add backend directory to path
 sys.path.append(str(Path(__file__).parent))
@@ -36,7 +37,7 @@ CSV_PATH = Path(__file__).parent.parent / "Latest_Indices_rawdata_14112025.csv"
 csv_loader = CSVLoader(str(CSV_PATH))
 
 # Global cached service instance
-cached_service = None
+cached_service: Optional[HeatmapService] = None
 
 
 @app.on_event("startup")
@@ -91,7 +92,7 @@ async def get_indices():
 
 
 @app.get("/heatmap/{index_name}", response_model=HeatmapResponse)
-async def get_heatmap(index_name: str, forward_period: str = None):
+async def get_heatmap(index_name: str, forward_period: Optional[str] = None):
     """
     Get heatmap data for a specific index.
     Calculates monthly averages and month-over-month returns or forward returns.
@@ -112,7 +113,8 @@ async def get_heatmap(index_name: str, forward_period: str = None):
                 detail=f"Index '{index_name}' not found. Use /indices to see available indices."
             )
         
-        # Use cached service instead of creating new one
+        # Use cached service (guaranteed to be initialized after startup)
+        assert cached_service is not None, "Service not initialized"
         service = cached_service
         
         # If forward_period is specified, use forward returns; otherwise use MoM returns

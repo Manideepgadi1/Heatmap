@@ -5,8 +5,8 @@
 import axios from 'axios';
 
 // Base URL for the FastAPI backend
-// Use /api for production, localhost:8001 for development
-const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:8001' : '/api';
+// Use /api for production, localhost:8000 for development
+const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:8000' : '/api';
 
 // Create axios instance with default config
 const apiClient = axios.create({
