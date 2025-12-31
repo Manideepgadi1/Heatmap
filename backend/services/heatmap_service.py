@@ -400,3 +400,71 @@ class HeatmapService:
                 forward_returns[year_str][month_str] = None
         
         return forward_returns
+
+    def calculate_trailing_returns(self, index_name: str, trailing_period: str) -> Dict[str, Dict[str, Optional[float]]]:
+        """
+        Calculate trailing CAGR (Compound Annual Growth Rate) for each month.
+        Formula: (current_value / past_value)^(1/years) - 1
+        This represents the annualized return from N months/years ago to the current month.
+        
+        Args:
+            index_name: Name of the index
+            trailing_period: One of '1M', '3M', '6M', '1Y', '2Y', '3Y', '4Y'
+            
+        Returns:
+            Dictionary with year -> month -> trailing CAGR value
+        """
+        if index_name not in self.data.columns:
+            raise ValueError(f"Index '{index_name}' not found in data")
+        
+        # Map trailing period to number of months and years
+        period_map = {
+            '1M': (1, 1/12),    # 1 month = 0.083 years
+            '3M': (3, 3/12),    # 3 months = 0.25 years
+            '6M': (6, 6/12),    # 6 months = 0.5 years
+            '1Y': (12, 1),      # 1 year
+            '2Y': (24, 2),      # 2 years
+            '3Y': (36, 3),      # 3 years
+            '4Y': (48, 4)       # 4 years
+        }
+        
+        if trailing_period not in period_map:
+            raise ValueError(f"Invalid trailing period: {trailing_period}")
+        
+        months_trailing, years_trailing = period_map[trailing_period]
+        
+        # Calculate monthly averages
+        monthly_avg = self.calculate_monthly_average(index_name)
+        
+        # Calculate trailing CAGR
+        trailing_returns: Dict[str, Dict[str, Optional[float]]] = {}
+        
+        # Convert monthly_avg to list for easier indexing
+        monthly_list = list(monthly_avg.items())
+        
+        for i, (idx, current_value) in enumerate(monthly_list):
+            year = idx[0]
+            month = idx[1]
+            year_str = str(year)
+            month_str = str(month)
+            
+            # Initialize year if not exists
+            if year_str not in trailing_returns:
+                trailing_returns[year_str] = {}
+            
+            # Check if we have data for the past period
+            past_idx = i - months_trailing
+            if past_idx >= 0:
+                past_value = monthly_list[past_idx][1]
+                
+                # Calculate trailing CAGR: (current_value / past_value)^(1/years) - 1
+                if not pd.isna(current_value) and not pd.isna(past_value) and past_value > 0 and current_value > 0:
+                    trailing_cagr = (current_value / past_value) ** (1 / years_trailing) - 1
+                    trailing_returns[year_str][month_str] = round(float(trailing_cagr), 5)
+                else:
+                    trailing_returns[year_str][month_str] = None
+            else:
+                # No past data available
+                trailing_returns[year_str][month_str] = None
+        
+        return trailing_returns

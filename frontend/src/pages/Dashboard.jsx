@@ -14,6 +14,7 @@ const Dashboard = () => {
   const [indices, setIndices] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState('');
   const [forwardPeriod, setForwardPeriod] = useState(null); // null means current/MoM returns
+  const [trailingPeriod, setTrailingPeriod] = useState(null); // null means no trailing returns
   const [heatmapData, setHeatmapData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -56,7 +57,7 @@ const Dashboard = () => {
     setError(null);
 
     try {
-      const data = await fetchHeatmap(indexName, forwardPeriod);
+      const data = await fetchHeatmap(indexName, forwardPeriod, trailingPeriod);
       setHeatmapData(data);
       setLoading(false);
     } catch (err) {
@@ -71,6 +72,7 @@ const Dashboard = () => {
    */
   const handleForwardPeriodChange = async (period) => {
     setForwardPeriod(period);
+    if (period) setTrailingPeriod(null); // Clear trailing when forward is selected
     
     // Reload data with new period if an index is selected
     if (selectedIndex) {
@@ -78,7 +80,31 @@ const Dashboard = () => {
       setError(null);
       
       try {
-        const data = await fetchHeatmap(selectedIndex, period);
+        const data = await fetchHeatmap(selectedIndex, period, null);
+        setHeatmapData(data);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setHeatmapData(null);
+        setLoading(false);
+      }
+    }
+  };
+
+  /**
+   * Handle trailing period selection.
+   */
+  const handleTrailingPeriodChange = async (period) => {
+    setTrailingPeriod(period);
+    if (period) setForwardPeriod(null); // Clear forward when trailing is selected
+    
+    // Reload data with new period if an index is selected
+    if (selectedIndex) {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const data = await fetchHeatmap(selectedIndex, null, period);
         setHeatmapData(data);
         setLoading(false);
       } catch (err) {
@@ -126,7 +152,7 @@ const Dashboard = () => {
             Financial Heatmap Dashboard
           </Typography>
           <Typography variant="h6" fontWeight="400" sx={{ opacity: 0.95 }}>
-            {forwardPeriod ? `Forward Returns Analysis (${forwardPeriod})` : 'Month-over-Month Returns Analysis'}
+            {trailingPeriod ? `Trailing Returns Analysis (${trailingPeriod})` : forwardPeriod ? `Forward Returns Analysis (${forwardPeriod})` : 'Month-over-Month Returns Analysis'}
           </Typography>
         </Paper>
 
@@ -159,14 +185,14 @@ const Dashboard = () => {
                 </Box>
                 <Box sx={{ minWidth: 200 }}>
                   <FormControl fullWidth>
-                    <InputLabel>Return Period</InputLabel>
+                    <InputLabel>Forward Period</InputLabel>
                     <Select
-                      value={forwardPeriod || 'current'}
-                      onChange={(e) => handleForwardPeriodChange(e.target.value === 'current' ? null : e.target.value)}
-                      label="Return Period"
+                      value={forwardPeriod || 'none'}
+                      onChange={(e) => handleForwardPeriodChange(e.target.value === 'none' ? null : e.target.value)}
+                      label="Forward Period"
                       disabled={loading}
                     >
-                      <MenuItem value="current">Current (MoM)</MenuItem>
+                      <MenuItem value="none">None</MenuItem>
                       <MenuItem value="1M">1 Month Forward</MenuItem>
                       <MenuItem value="3M">3 Months Forward</MenuItem>
                       <MenuItem value="6M">6 Months Forward</MenuItem>
@@ -174,6 +200,26 @@ const Dashboard = () => {
                       <MenuItem value="2Y">2 Years Forward</MenuItem>
                       <MenuItem value="3Y">3 Years Forward</MenuItem>
                       <MenuItem value="4Y">4 Years Forward</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+                <Box sx={{ minWidth: 200 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>Trailing Period</InputLabel>
+                    <Select
+                      value={trailingPeriod || 'none'}
+                      onChange={(e) => handleTrailingPeriodChange(e.target.value === 'none' ? null : e.target.value)}
+                      label="Trailing Period"
+                      disabled={loading}
+                    >
+                      <MenuItem value="none">None</MenuItem>
+                      <MenuItem value="1M">1 Month Trailing</MenuItem>
+                      <MenuItem value="3M">3 Months Trailing</MenuItem>
+                      <MenuItem value="6M">6 Months Trailing</MenuItem>
+                      <MenuItem value="1Y">1 Year Trailing</MenuItem>
+                      <MenuItem value="2Y">2 Years Trailing</MenuItem>
+                      <MenuItem value="3Y">3 Years Trailing</MenuItem>
+                      <MenuItem value="4Y">4 Years Trailing</MenuItem>
                     </Select>
                   </FormControl>
                 </Box>
@@ -198,6 +244,7 @@ const Dashboard = () => {
                     inverseRankPercentile={heatmapData.inverse_rank_percentile}
                     monthlyRankPercentile={heatmapData.monthly_rank_percentile}
                     forwardPeriod={forwardPeriod}
+                    trailingPeriod={trailingPeriod}
                   />
                 </Box>
               )}

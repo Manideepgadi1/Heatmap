@@ -92,15 +92,17 @@ async def get_indices():
 
 
 @app.get("/heatmap/{index_name}", response_model=HeatmapResponse)
-async def get_heatmap(index_name: str, forward_period: Optional[str] = None):
+async def get_heatmap(index_name: str, forward_period: Optional[str] = None, trailing_period: Optional[str] = None):
     """
     Get heatmap data for a specific index.
-    Calculates monthly averages and month-over-month returns or forward returns.
+    Calculates monthly averages and month-over-month returns, forward returns, or trailing returns.
     
     Args:
         index_name: Name of the index (must match column name in CSV)
         forward_period: Optional forward period ('1M', '3M', '6M', '1Y', '2Y', '3Y', '4Y')
                        If provided, shows forward returns instead of MoM returns
+        trailing_period: Optional trailing period ('1M', '3M', '6M', '1Y', '2Y', '3Y', '4Y')
+                        If provided, shows trailing returns instead of MoM returns
         
     Returns:
         HeatmapResponse: Heatmap matrix with year -> month -> return value
@@ -117,8 +119,10 @@ async def get_heatmap(index_name: str, forward_period: Optional[str] = None):
         assert cached_service is not None, "Service not initialized"
         service = cached_service
         
-        # If forward_period is specified, use forward returns; otherwise use MoM returns
-        if forward_period:
+        # Determine which calculation to use (priority: trailing > forward > MoM)
+        if trailing_period:
+            heatmap_data = service.calculate_trailing_returns(index_name, trailing_period)
+        elif forward_period:
             heatmap_data = service.calculate_forward_returns(index_name, forward_period)
         else:
             heatmap_data = service.generate_heatmap_matrix(index_name)
