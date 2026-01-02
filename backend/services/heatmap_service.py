@@ -346,6 +346,11 @@ class HeatmapService:
         Returns:
             Dictionary with year -> month -> forward CAGR value
         """
+        # Check cache first
+        cache_key = self._get_cache_key(index_name, 'forward_returns', forward_period)
+        if cache_key in self._cache:
+            return self._cache[cache_key]
+        
         if index_name not in self.data.columns:
             raise ValueError(f"Index '{index_name}' not found in data")
         
@@ -399,6 +404,8 @@ class HeatmapService:
                 # No future data available
                 forward_returns[year_str][month_str] = None
         
+        # Cache the result
+        self._cache[cache_key] = forward_returns
         return forward_returns
 
     def calculate_trailing_returns(self, index_name: str, trailing_period: str) -> Dict[str, Dict[str, Optional[float]]]:
@@ -414,6 +421,11 @@ class HeatmapService:
         Returns:
             Dictionary with year -> month -> trailing CAGR value
         """
+        # Check cache first
+        cache_key = self._get_cache_key(index_name, 'trailing_returns', trailing_period)
+        if cache_key in self._cache:
+            return self._cache[cache_key]
+        
         if index_name not in self.data.columns:
             raise ValueError(f"Index '{index_name}' not found in data")
         
@@ -467,4 +479,6 @@ class HeatmapService:
                 # No past data available
                 trailing_returns[year_str][month_str] = None
         
+        # Cache the result
+        self._cache[cache_key] = trailing_returns
         return trailing_returns

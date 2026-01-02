@@ -120,6 +120,7 @@ async def get_heatmap(index_name: str, forward_period: Optional[str] = None, tra
         service = cached_service
         
         # Determine which calculation to use (priority: trailing > forward > MoM)
+        # Calculate heatmap data based on period type
         if trailing_period:
             heatmap_data = service.calculate_trailing_returns(index_name, trailing_period)
         elif forward_period:
@@ -127,6 +128,7 @@ async def get_heatmap(index_name: str, forward_period: Optional[str] = None, tra
         else:
             heatmap_data = service.generate_heatmap_matrix(index_name)
         
+        # Calculate other metrics (these are cached after first call)
         monthly_price = service.generate_monthly_price_matrix(index_name)
         monthly_profits = service.generate_heatmap_matrix(index_name)  # Always MoM returns for this metric
         avg_monthly_profits_3y = service.calculate_avg_monthly_profits_3y(index_name)
